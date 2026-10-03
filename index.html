@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to PDF Converter - Free & Secure Client-Side Tool</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- jsPDF Library for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SortableJS for Drag-and-Drop Thumbnail Reordering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfcfc;
+        }
+        
+        /* Drag-and-drop animated dropzone state */
+        .dropzone-active {
+            border-color: #dc2626 !important;
+            background-color: #fef2f2 !important;
+            transform: scale(1.01);
+        }
+
+        /* Sortable ghost card style */
+        .sortable-ghost {
+            opacity: 0.4;
+            border: 2px dashed #ef4444 !important;
+        }
+
+        .sortable-drag {
+            cursor: grabbing !important;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.2) !important;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fca5a5;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ef4444;
+        }
+
+        /* Video element for camera preview */
+        #cameraVideo {
+            transform: scaleX(-1); /* Mirror camera preview for natural feel */
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-200">
+                    <i class="fa-solid fa-file-pdf text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Image to PDF Converter</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">100% Private • Local Browser Conversion</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5 animate-pulse"></span> Free & Secure
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-grow w-full">
+
+        <!-- Upload Dropzone Section -->
+        <section id="uploadSection" class="transition-all duration-300">
+            <!-- Red Drag & Drop Area -->
+            <div id="dropZone" class="border-2 border-dashed border-red-300 bg-red-50/40 hover:bg-red-50 hover:border-red-500 rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md relative overflow-hidden group">
+                <input type="file" id="fileInput" multiple accept="image/*, image/jpeg, image/jpg, image/png, image/webp" class="hidden">
+                
+                <div class="pointer-events-none flex flex-col items-center justify-center space-y-4">
+                    <!-- Icon -->
+                    <div class="w-20 h-20 rounded-2xl bg-red-100 group-hover:bg-red-200 text-red-600 flex items-center justify-center transition-all duration-200 group-hover:scale-110">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                    </div>
+                    
+                    <!-- Primary Text -->
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-1">Drag & Drop Your Images Here</h2>
+                        <p class="text-slate-500 text-sm">Convert JPG, JPEG, PNG, or WEBP into a single PDF document</p>
+                        <p class="text-slate-400 text-xs mt-1">Or press <kbd class="px-1.5 py-0.5 bg-slate-200 rounded font-mono text-[11px] text-slate-700">Ctrl + V</kbd> to paste an image directly from your clipboard</p>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="flex items-center space-x-3 w-48 py-1">
+                        <div class="h-px bg-red-200 flex-1"></div>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-red-400">or</span>
+                        <div class="h-px bg-red-200 flex-1"></div>
+                    </div>
+
+                    <!-- Input Action Buttons Group -->
+                    <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-3 pt-1">
+                        <!-- File Upload Button -->
+                        <button type="button" id="browseBtn" class="px-5 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold rounded-xl shadow-md shadow-red-500/20 transition-all flex items-center space-x-2 text-sm">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Upload from Your Files</span>
+                        </button>
+
+                        <!-- Browser Camera Button -->
+                        <button type="button" id="openCameraBtn" class="px-5 py-3 bg-white hover:bg-slate-50 active:bg-slate-100 text-red-600 border border-red-200 font-semibold rounded-xl shadow-sm transition-all flex items-center space-x-2 text-sm">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Take Photo</span>
+                        </button>
+
+                        <!-- Load from Web URL Button -->
+                        <button type="button" id="openUrlBtn" class="px-4 py-3 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 border border-slate-200 font-medium rounded-xl shadow-sm transition-all flex items-center space-x-2 text-sm">
+                            <i class="fa-solid fa-link text-slate-400"></i>
+                            <span>Image URL</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Format & Storage Info -->
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs text-slate-500 text-center">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-red-500"></i> Supported Formats: JPG, JPEG, PNG, WEBP</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-mobile-screen-button text-red-500"></i> Direct Phone Gallery Access</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-red-500"></i> 100% Client-Side Processing</span>
+            </div>
+        </section>
+
+        <!-- Image Workspace (Visible after uploading images) -->
+        <section id="workspaceSection" class="hidden space-y-8 transition-all duration-300">
+            
+            <!-- Header bar for uploaded images -->
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <span id="imageCountBadge" class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-sm">
+                        0 Images
+                    </span>
+                    <span class="text-slate-500 text-xs sm:text-sm" id="totalRawSizeText">
+                        Total Raw Size: 0 MB
+                    </span>
+                </div>
+
+                <div class="flex flex-wrap items-center space-x-2 w-full sm:w-auto">
+                    <!-- Add More Images Button -->
+                    <button id="addMoreBtn" class="flex-1 sm:flex-none px-3.5 py-2 border border-slate-300 hover:border-red-400 text-slate-700 hover:text-red-600 font-medium text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1.5 bg-white">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Add Images</span>
+                    </button>
+                    <!-- Camera Button -->
+                    <button id="addCameraBtn" class="flex-1 sm:flex-none px-3.5 py-2 border border-slate-300 hover:border-red-400 text-slate-700 hover:text-red-600 font-medium text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1.5 bg-white">
+                        <i class="fa-solid fa-camera text-xs"></i>
+                        <span>Take Photo</span>
+                    </button>
+                    <!-- Clear All Button -->
+                    <button id="clearAllBtn" class="flex-1 sm:flex-none px-3.5 py-2 text-slate-500 hover:text-red-600 font-medium text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1 hover:bg-red-50">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                        <span>Clear All</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thumbnails Drag & Drop Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <span>Selected Images</span>
+                        <span class="text-xs font-normal text-slate-500">(Drag thumbnails to reorder pages)</span>
+                    </h3>
+                </div>
+
+                <div id="imageGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <!-- Dynamic Thumbnails injected via JS -->
+                </div>
+            </div>
+
+            <!-- Target File Size Bar Section -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-red-600"></i>
+                        <span>Target PDF File Size (Optional)</span>
+                    </h3>
+                    <p class="text-slate-500 text-xs sm:text-sm mt-0.5">Specify desired max PDF size. Leave empty to preserve 100% original crisp image quality.</p>
+                </div>
+
+                <!-- Input & Units Bar -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+                            <i class="fa-solid fa-weight-hanging"></i>
+                        </span>
+                        <input type="number" id="targetSizeInput" placeholder="Leave empty for original max quality" min="1" step="any" class="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-slate-800 font-semibold text-sm">
+                    </div>
+
+                    <!-- KB / MB Unit Selector Bar -->
+                    <div class="flex items-center bg-white p-1 rounded-xl border border-slate-300 self-center sm:self-auto w-full sm:w-auto">
+                        <button type="button" id="unitKbBtn" class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm">
+                            KB
+                        </button>
+                        <button type="button" id="unitMbBtn" class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
+                            MB
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Guidance Info Box -->
+                <div id="targetSizeNotice" class="text-xs text-slate-500 flex items-center gap-2 bg-red-50/50 text-red-700 p-2.5 rounded-xl border border-red-100">
+                    <i class="fa-solid fa-circle-info text-red-500 text-sm flex-shrink-0"></i>
+                    <span>Note: Standard empty PDF structure metadata requires ~2–3 KB minimum baseline overhead.</span>
+                </div>
+            </div>
+
+            <!-- Convert Button Action Container -->
+            <div class="flex flex-col items-center justify-center space-y-3 pt-2">
+                <button id="convertBtn" class="w-full sm:w-80 py-4 px-8 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-lg rounded-2xl shadow-lg shadow-red-600/30 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-3">
+                    <i class="fa-solid fa-file-export text-xl"></i>
+                    <span>Convert to PDF</span>
+                </button>
+                <p class="text-xs text-slate-400">Instant generation directly in your browser</p>
+            </div>
+
+        </section>
+
+        <!-- Progress Indicator Section -->
+        <section id="progressSection" class="hidden my-12 bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-sm text-center max-w-lg mx-auto space-y-6">
+            <div class="relative w-20 h-20 mx-auto">
+                <!-- Spinner -->
+                <div class="w-20 h-20 border-4 border-red-100 border-t-red-600 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-red-600">
+                    <i class="fa-solid fa-file-pdf text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-xl font-bold text-slate-800">Converting Your Images...</h3>
+                <p id="progressStatusText" class="text-sm text-slate-500">Preparing images for PDF creation</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                <div id="progressBar" class="bg-red-600 h-full w-0 transition-all duration-200 rounded-full"></div>
+            </div>
+            
+            <p class="text-xs text-slate-400">Please keep this window open while processing</p>
+        </section>
+
+        <!-- PDF Ready / Completion Section -->
+        <section id="successSection" class="hidden my-8 bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-sm text-center max-w-lg mx-auto space-y-6 transition-all">
+            
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <i class="fa-solid fa-check text-4xl"></i>
+            </div>
+
+            <div class="space-y-1">
+                <h2 class="text-2xl font-extrabold text-slate-900">PDF Ready!</h2>
+                <p class="text-slate-500 text-sm">Your images have been successfully converted to PDF format.</p>
+            </div>
+
+            <!-- Result Summary Box -->
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-left text-xs space-y-2 text-slate-600">
+                <div class="flex justify-between border-b border-slate-200/60 pb-2">
+                    <span>Total Pages:</span>
+                    <span id="resPageCount" class="font-bold text-slate-800">0 Pages</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200/60 pb-2">
+                    <span>Target Size Setting:</span>
+                    <span id="resTargetSizeSetting" class="font-bold text-slate-800">Default Quality</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Final File Size:</span>
+                    <span id="resFileSize" class="font-bold text-red-600">0 MB</span>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <div class="space-y-3">
+                <button id="downloadPdfBtn" class="w-full py-4 px-8 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-lg rounded-2xl shadow-lg shadow-red-600/30 transition-all flex items-center justify-center space-x-3">
+                    <i class="fa-solid fa-download text-xl"></i>
+                    <span>Download PDF</span>
+                </button>
+
+                <!-- Convert Another Button -->
+                <button id="convertAnotherBtn" class="w-full py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition text-sm">
+                    Convert More Images
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Camera Capture Modal -->
+    <div id="cameraModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-red-600"></i>
+                    <span>Take Photo from Browser</span>
+                </h3>
+                <button id="closeCameraBtn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Live Video Stream Preview -->
+            <div class="relative bg-slate-900 rounded-2xl overflow-hidden aspect-video flex items-center justify-center">
+                <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                
+                <!-- Error or Placeholder overlay -->
+                <div id="cameraErrorMsg" class="hidden absolute inset-0 bg-slate-900/90 text-white p-6 flex flex-col items-center justify-center text-center space-y-2">
+                    <i class="fa-solid fa-video-slash text-3xl text-red-400"></i>
+                    <p class="font-semibold text-sm">Unable to access camera</p>
+                    <p class="text-xs text-slate-400">Please grant browser camera permissions or ensure a camera is connected.</p>
+                </div>
+            </div>
+
+            <!-- Camera Controls -->
+            <div class="flex items-center justify-between pt-2">
+                <button id="switchCameraBtn" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Flip Camera</span>
+                </button>
+
+                <button id="snapPhotoBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-xl shadow-md shadow-red-500/20 transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-circle text-xs text-red-200 animate-ping"></i>
+                    <span>Snap Photo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Image URL Modal -->
+    <div id="urlModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-link text-red-600"></i>
+                    <span>Add Image from Web URL</span>
+                </h3>
+                <button id="closeUrlModalBtn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500">Enter a direct URL of an online image (JPG, PNG, or WEBP)</p>
+
+            <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+
+            <div class="flex items-center justify-end space-x-2 pt-2">
+                <button id="cancelUrlBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                    Cancel
+                </button>
+                <button id="fetchUrlBtn" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-red-500/20">
+                    Add Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-100 py-6">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400 space-y-1">
+            <p>Image to PDF Converter • Free Client-Side Utility</p>
+            <p>Your privacy is strictly preserved. All image processing occurs entirely within your web browser.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Store uploaded images data in memory
+        // Items format: { id: string, name: string, size: number, type: string, src: string, imgElement: HTMLImageElement, width: number, height: number }
+        let uploadedFiles = [];
+        let generatedPdfBlobUrl = null;
+        let generatedFileName = "converted_document.pdf";
+        let sortableInstance = null;
+        let activeUnit = "KB"; // "KB" or "MB"
+
+        // Camera Stream Variables
+        let cameraStream = null;
+        let currentFacingMode = "user"; // "user" or "environment"
+
+        // DOM Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const addMoreBtn = document.getElementById('addMoreBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        
+        const uploadSection = document.getElementById('uploadSection');
+        const workspaceSection = document.getElementById('workspaceSection');
+        const progressSection = document.getElementById('progressSection');
+        const successSection = document.getElementById('successSection');
+
+        const imageGrid = document.getElementById('imageGrid');
+        const imageCountBadge = document.getElementById('imageCountBadge');
+        const totalRawSizeText = document.getElementById('totalRawSizeText');
+
+        const convertBtn = document.getElementById('convertBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatusText = document.getElementById('progressStatusText');
+
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        const convertAnotherBtn = document.getElementById('convertAnotherBtn');
+
+        const targetSizeInput = document.getElementById('targetSizeInput');
+        const unitKbBtn = document.getElementById('unitKbBtn');
+        const unitMbBtn = document.getElementById('unitMbBtn');
+
+        const resPageCount = document.getElementById('resPageCount');
+        const resTargetSizeSetting = document.getElementById('resTargetSizeSetting');
+        const resFileSize = document.getElementById('resFileSize');
+
+        // Camera Modal DOM
+        const cameraModal = document.getElementById('cameraModal');
+        const openCameraBtn = document.getElementById('openCameraBtn');
+        const addCameraBtn = document.getElementById('addCameraBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const snapPhotoBtn = document.getElementById('snapPhotoBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const cameraErrorMsg = document.getElementById('cameraErrorMsg');
+
+        // URL Modal DOM
+        const urlModal = document.getElementById('urlModal');
+        const openUrlBtn = document.getElementById('openUrlBtn');
+        const closeUrlModalBtn = document.getElementById('closeUrlModalBtn');
+        const cancelUrlBtn = document.getElementById('cancelUrlBtn');
+        const fetchUrlBtn = document.getElementById('fetchUrlBtn');
+        const imageUrlInput = document.getElementById('imageUrlInput');
+
+        // Initialize Drag & Drop Events for Main Dropzone
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('dropzone-active');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('dropzone-active');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            handleFileSelection(files);
+        });
+
+        // Trigger file input click
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== browseBtn && !browseBtn.contains(e.target) &&
+                e.target !== openCameraBtn && !openCameraBtn.contains(e.target) &&
+                e.target !== openUrlBtn && !openUrlBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        browseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        addMoreBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+            fileInput.value = ''; // Reset input
+        });
+
+        clearAllBtn.addEventListener('click', () => {
+            uploadedFiles = [];
+            renderImageGrid();
+            updateUIState();
+        });
+
+        // Clipboard Paste Support (Ctrl + V anywhere on page)
+        window.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const pastedFiles = [];
+            
+            for (let item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    if (blob) pastedFiles.push(blob);
+                }
+            }
+
+            if (pastedFiles.length > 0) {
+                showToast(`Pasted ${pastedFiles.length} image(s) from clipboard!`);
+                handleFileSelection(pastedFiles);
+            }
+        });
+
+        // URL Modal Event Handlers
+        openUrlBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            imageUrlInput.value = '';
+            urlModal.classList.remove('hidden');
+        });
+
+        closeUrlModalBtn.addEventListener('click', () => urlModal.classList.add('hidden'));
+        cancelUrlBtn.addEventListener('click', () => urlModal.classList.add('hidden'));
+
+        fetchUrlBtn.addEventListener('click', () => {
+            const url = imageUrlInput.value.trim();
+            if (!url) {
+                showToast("Please enter a valid image URL.");
+                return;
+            }
+
+            fetchUrlBtn.innerText = "Loading...";
+            fetchUrlBtn.disabled = true;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                try {
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    uploadedFiles.push({
+                        id: 'img_' + Math.random().toString(36).substr(2, 9),
+                        name: 'Web Image (' + new Date().toLocaleTimeString() + ')',
+                        size: Math.round(dataUrl.length * 0.75),
+                        type: 'image/jpeg',
+                        src: dataUrl,
+                        width: img.width,
+                        height: img.height,
+                        imgElement: img
+                    });
+                    renderImageGrid();
+                    updateUIState();
+                    urlModal.classList.add('hidden');
+                    showToast("Web image added successfully!");
+                } catch (err) {
+                    showToast("Could not load image due to CORS restrictions on that domain.");
+                } finally {
+                    fetchUrlBtn.innerText = "Add Image";
+                    fetchUrlBtn.disabled = false;
+                }
+            };
+
+            img.onerror = () => {
+                showToast("Failed to load image from URL. Check link or CORS.");
+                fetchUrlBtn.innerText = "Add Image";
+                fetchUrlBtn.disabled = false;
+            };
+
+            img.src = url;
+        });
+
+        // Camera Modal Triggering
+        openCameraBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startCamera();
+        });
+
+        addCameraBtn.addEventListener('click', () => {
+            startCamera();
+        });
+
+        closeCameraBtn.addEventListener('click', stopCamera);
+
+        async function startCamera() {
+            cameraModal.classList.remove('hidden');
+            cameraErrorMsg.classList.add('hidden');
+
+            try {
+                if (cameraStream) {
+                    stopCameraTracks();
+                }
+
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: currentFacingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                });
+
+                cameraVideo.srcObject = cameraStream;
+            } catch (err) {
+                console.error("Camera access error:", err);
+                cameraErrorMsg.classList.remove('hidden');
+            }
+        }
+
+        function stopCameraTracks() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+        }
+
+        function stopCamera() {
+            stopCameraTracks();
+            cameraModal.classList.add('hidden');
+        }
+
+        switchCameraBtn.addEventListener('click', () => {
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            startCamera();
+        });
+
+        snapPhotoBtn.addEventListener('click', () => {
+            if (!cameraStream || cameraVideo.videoWidth === 0) {
+                showToast("Camera preview not ready yet.");
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraVideo.videoWidth;
+            canvas.height = cameraVideo.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Handle mirror flip if using front user camera
+            if (currentFacingMode === 'user') {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            const img = new Image();
+            img.onload = () => {
+                uploadedFiles.push({
+                    id: 'img_' + Math.random().toString(36).substr(2, 9),
+                    name: 'Camera Photo ' + (uploadedFiles.length + 1),
+                    size: Math.round(dataUrl.length * 0.75),
+                    type: 'image/jpeg',
+                    src: dataUrl,
+                    width: img.width,
+                    height: img.height,
+                    imgElement: img
+                });
+                renderImageGrid();
+                updateUIState();
+                showToast("Captured photo successfully!");
+                stopCamera();
+            };
+            img.src = dataUrl;
+        });
+
+        // Unit Switcher (KB vs MB)
+        unitKbBtn.addEventListener('click', () => {
+            activeUnit = "KB";
+            unitKbBtn.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm";
+            unitMbBtn.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        });
+
+        unitMbBtn.addEventListener('click', () => {
+            activeUnit = "MB";
+            unitMbBtn.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all bg-red-600 text-white shadow-sm";
+            unitKbBtn.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        });
+
+        // Process uploaded image files
+        function handleFileSelection(fileList) {
+            if (!fileList || fileList.length === 0) return;
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            const filesArray = Array.from(fileList);
+
+            let loadedCount = 0;
+            const validFiles = filesArray.filter(file => validTypes.includes(file.type.toLowerCase()) || file.name.match(/\.(jpg|jpeg|png|webp)$/i));
+
+            if (validFiles.length === 0) {
+                showToast("Please select valid image files (JPG, PNG, WEBP).");
+                return;
+            }
+
+            validFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Max dimension safeguard to prevent mobile browser canvas OOM crashes on 4K/8K images
+                        let maxDim = 4096;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+
+                        uploadedFiles.push({
+                            id: 'img_' + Math.random().toString(36).substr(2, 9),
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            src: e.target.result,
+                            width: w,
+                            height: h,
+                            imgElement: img
+                        });
+
+                        loadedCount++;
+                        if (loadedCount === validFiles.length) {
+                            renderImageGrid();
+                            updateUIState();
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Render Thumbnails Grid with Drag-and-Drop capability using SortableJS
+        function renderImageGrid() {
+            imageGrid.innerHTML = '';
+
+            uploadedFiles.forEach((fileObj, index) => {
+                const card = document.createElement('div');
+                card.className = 'group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col';
+                card.setAttribute('data-id', fileObj.id);
+
+                card.innerHTML = `
+                    <!-- Thumbnail preview -->
+                    <div class="relative h-36 bg-slate-100 flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing">
+                        <img src="${fileObj.src}" alt="${fileObj.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 pointer-events-none">
+                        
+                        <!-- Page Number Badge -->
+                        <span class="absolute top-2 left-2 bg-slate-900/70 text-white text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
+                            #${index + 1}
+                        </span>
+
+                        <!-- Delete Button -->
+                        <button onclick="removeImage('${fileObj.id}')" title="Remove image" class="absolute top-2 right-2 w-7 h-7 bg-white/90 hover:bg-red-600 text-slate-600 hover:text-white rounded-full flex items-center justify-center transition shadow-sm">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+
+                        <!-- Drag Handle Overlay -->
+                        <div class="absolute bottom-2 right-2 bg-slate-900/60 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-grip-vertical"></i> Drag
+                        </div>
+                    </div>
+
+                    <!-- File Info -->
+                    <div class="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="truncate font-medium text-slate-700 max-w-[120px]" title="${fileObj.name}">${fileObj.name}</span>
+                        <span class="text-slate-400 text-[10px]">${formatBytes(fileObj.size)}</span>
+                    </div>
+                `;
+
+                imageGrid.appendChild(card);
+            });
+
+            // Initialize or update SortableJS for smooth drag-reorder
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+
+            sortableInstance = new Sortable(imageGrid, {
+                animation: 200,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function () {
+                    // Sync internal array order with DOM order
+                    const newOrderIds = Array.from(imageGrid.children).map(child => child.getAttribute('data-id'));
+                    uploadedFiles.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+                    renderImageGrid(); // Refresh page badges
+                }
+            });
+        }
+
+        // Remove single image
+        window.removeImage = function(id) {
+            uploadedFiles = uploadedFiles.filter(item => item.id !== id);
+            renderImageGrid();
+            updateUIState();
+        };
+
+        // Update total counters & UI state
+        function updateUIState() {
+            const count = uploadedFiles.length;
+
+            if (count > 0) {
+                uploadSection.classList.add('hidden');
+                workspaceSection.classList.remove('hidden');
+            } else {
+                uploadSection.classList.remove('hidden');
+                workspaceSection.classList.add('hidden');
+                successSection.classList.add('hidden');
+                progressSection.classList.add('hidden');
+            }
+
+            // Calculate total raw size
+            const totalBytes = uploadedFiles.reduce((acc, item) => acc + item.size, 0);
+            
+            imageCountBadge.textContent = `${count} Image${count === 1 ? '' : 's'}`;
+            totalRawSizeText.textContent = `Total Raw Size: ${formatBytes(totalBytes)}`;
+        }
+
+        // PDF Generation Trigger
+        convertBtn.addEventListener('click', async () => {
+            if (uploadedFiles.length === 0) return;
+
+            // Check jsPDF availability
+            const jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+            if (!jsPDFClass) {
+                showToast("PDF generation library failed to load. Please check your network connection.");
+                return;
+            }
+
+            workspaceSection.classList.add('hidden');
+            progressSection.classList.remove('hidden');
+            progressBar.style.width = '5%';
+            progressStatusText.textContent = 'Analyzing quality & size requirements...';
+
+            await new Promise(r => setTimeout(r, 100));
+
+            try {
+                const totalImages = uploadedFiles.length;
+
+                // Read target file size
+                const rawInputValue = parseFloat(targetSizeInput.value);
+                let targetBytes = null;
+                let targetSettingLabel = "Original Quality (Uncompressed)";
+
+                if (!isNaN(rawInputValue) && rawInputValue > 0) {
+                    targetBytes = activeUnit === "MB" ? rawInputValue * 1024 * 1024 : rawInputValue * 1024;
+                    targetSettingLabel = `${rawInputValue} ${activeUnit}`;
+                }
+
+                let quality = 1.0; // Preserve 100% full original quality when no target set
+                let maxDimension = Infinity;
+
+                if (targetBytes) {
+                    // Estimate target byte budget per page (accounting for ~2.5KB fixed PDF structure)
+                    const availableImageBytes = Math.max(800, targetBytes - 2500);
+                    const bytesPerPage = availableImageBytes / totalImages;
+
+                    if (bytesPerPage <= 8000) { // e.g. <= 10 KB targets
+                        maxDimension = Math.min(280, Math.max(120, Math.round(Math.sqrt(bytesPerPage * 6))));
+                        quality = Math.max(0.05, Math.min(0.25, bytesPerPage / 16000));
+                    } else if (bytesPerPage <= 25000) {
+                        maxDimension = 500;
+                        quality = 0.40;
+                    } else if (bytesPerPage <= 80000) {
+                        maxDimension = 900;
+                        quality = 0.60;
+                    } else if (bytesPerPage <= 250000) {
+                        maxDimension = 1500;
+                        quality = 0.78;
+                    } else {
+                        maxDimension = 2200;
+                        quality = 0.88;
+                    }
+                }
+
+                // Function to render PDF with given scale and quality
+                async function buildPdf(scaleMaxDim, imgQuality) {
+                    let pdf = null;
+
+                    for (let i = 0; i < totalImages; i++) {
+                        const fileObj = uploadedFiles[i];
+                        
+                        const percent = Math.round(((i + 1) / totalImages) * 90);
+                        progressBar.style.width = `${percent}%`;
+                        progressStatusText.textContent = `Processing image ${i + 1} of ${totalImages}...`;
+                        await new Promise(r => setTimeout(r, 15));
+
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        let origW = fileObj.width;
+                        let origH = fileObj.height;
+
+                        let targetW = origW;
+                        let targetH = origH;
+
+                        // Scale if max dimension is enforced
+                        if (scaleMaxDim !== Infinity && (origW > scaleMaxDim || origH > scaleMaxDim)) {
+                            if (origW > origH) {
+                                targetW = scaleMaxDim;
+                                targetH = Math.round((origH * scaleMaxDim) / origW);
+                            } else {
+                                targetH = scaleMaxDim;
+                                targetW = Math.round((origW * scaleMaxDim) / origH);
+                            }
+                        }
+
+                        canvas.width = targetW;
+                        canvas.height = targetH;
+
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, targetW, targetH);
+                        ctx.drawImage(fileObj.imgElement, 0, 0, targetW, targetH);
+
+                        const imgDataUrl = canvas.toDataURL('image/jpeg', imgQuality);
+
+                        const pdfPageW = targetW * 0.75;
+                        const pdfPageH = targetH * 0.75;
+                        const orientation = pdfPageW > pdfPageH ? 'landscape' : 'portrait';
+
+                        if (i === 0) {
+                            pdf = new jsPDFClass({
+                                orientation: orientation,
+                                unit: 'pt',
+                                format: [pdfPageW, pdfPageH]
+                            });
+                            pdf.addImage(imgDataUrl, 'JPEG', 0, 0, pdfPageW, pdfPageH);
+                        } else {
+                            pdf.addPage([pdfPageW, pdfPageH], orientation);
+                            pdf.addImage(imgDataUrl, 'JPEG', 0, 0, pdfPageW, pdfPageH);
+                        }
+                    }
+
+                    const pdfArrayBuffer = pdf.output('arraybuffer');
+                    return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
+                }
+
+                let pdfBlob = await buildPdf(maxDimension, quality);
+
+                // Iterative reduction loop if PDF output exceeds strict target (e.g. < 10KB)
+                if (targetBytes && pdfBlob.size > targetBytes) {
+                    let iterations = 0;
+                    let currentDim = maxDimension;
+                    let currentQual = quality;
+
+                    while (pdfBlob.size > targetBytes && iterations < 4 && currentQual > 0.03) {
+                        iterations++;
+                        currentQual *= 0.7;
+                        currentDim = Math.max(100, Math.round(currentDim * 0.75));
+                        progressStatusText.textContent = `Optimizing file size (${iterations}/4)...`;
+                        pdfBlob = await buildPdf(currentDim, currentQual);
+                    }
+                }
+
+                progressBar.style.width = '98%';
+                progressStatusText.textContent = 'Finalizing PDF output...';
+                await new Promise(r => setTimeout(r, 80));
+
+                if (generatedPdfBlobUrl) {
+                    URL.revokeObjectURL(generatedPdfBlobUrl);
+                }
+                generatedPdfBlobUrl = URL.createObjectURL(pdfBlob);
+
+                resPageCount.textContent = `${totalImages} Page${totalImages > 1 ? 's' : ''}`;
+                resTargetSizeSetting.textContent = targetSettingLabel;
+                resFileSize.textContent = formatBytes(pdfBlob.size);
+
+                const firstFileName = uploadedFiles[0].name.replace(/\.[^/.]+$/, "");
+                generatedFileName = totalImages === 1 ? `${firstFileName}.pdf` : `converted_images_${totalImages}_pages.pdf`;
+
+                progressSection.classList.add('hidden');
+                successSection.classList.remove('hidden');
+
+            } catch (err) {
+                console.error("PDF generation error:", err);
+                showToast("An error occurred while generating the PDF.");
+                progressSection.classList.add('hidden');
+                workspaceSection.classList.remove('hidden');
+            }
+        });
+
+        // Download PDF Button
+        downloadPdfBtn.addEventListener('click', () => {
+            if (!generatedPdfBlobUrl) return;
+
+            const a = document.createElement('a');
+            a.href = generatedPdfBlobUrl;
+            a.download = generatedFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        // Convert Another / Start Over
+        convertAnotherBtn.addEventListener('click', () => {
+            uploadedFiles = [];
+            targetSizeInput.value = '';
+            renderImageGrid();
+            updateUIState();
+            successSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+        });
+
+        // Helper: Format byte sizes nicely
+        function formatBytes(bytes, decimals = 1) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Helper: Custom toast notification message
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium z-50 flex items-center space-x-2 transition-all transform translate-y-10 opacity-0';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-red-400"></i><span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        window.onload = function() {
+            console.log("Image to PDF Converter loaded successfully.");
+        };
+    </script>
+</body>
+</html>
